@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./App.css";
 import { ProductCard } from "./components/ProductCard";
 
@@ -53,6 +54,18 @@ const products = [
 ];
 
 function App() {
+  const [cart, setCart] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  function handleAddtoCart(product) {
+    console.log(product);
+    setCart([...cart, product]);
+    console.log(cart);
+  }
+
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
   return (
     <div className="catalog">
       <div className="catalog-header">
@@ -60,16 +73,26 @@ function App() {
           <h1>Product Catalog</h1>
           <p className="catalog-subtitle">{products.length} products</p>
         </div>
+        <div className="cart-badge">Cart ({cart.length})</div>
       </div>
 
+      <input
+        type="text"
+        className="search-input"
+        placeholder="Search Products..."
+        value={searchTerm}
+        onChange={(event) => setSearchTerm(event.target.value)}
+      />
+
       <div className="product-grid">
-        {products.map((product) => (
+        {filteredProducts.map((product) => (
           <ProductCard
             key={product.id}
             name={product.name}
             price={product.price}
             image={product.image}
             category={product.category}
+            onAdd={() => handleAddtoCart(product)}
           />
         ))}
       </div>
