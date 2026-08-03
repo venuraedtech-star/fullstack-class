@@ -1,43 +1,36 @@
-import { useState, useMemo } from "react";
-import "./App.css";
-// import products from "./data/products";
-import Header from "./components/Header";
-import SearchBar from "./components/SearchBar";
-import ProductGrid from "./components/ProductGrid";
-import NewsletterForm from "./components/NewsletterForm";
-import useFetch from "./hooks/useFetch";
+import { Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import HomePage from "./pages/HomePage";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
+import LoginPage from "./pages/LoginPage";
+import AdminPage from "./pages/AdminPage";
 
 function App() {
-  const {
-    data: products,
-    loading,
-    error,
-  } = useFetch("https://dummyjson.com/products?limit=194");
-  const [cart, setCart] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  function handleAddtoCart(product) {
-    setCart([...cart, product]);
-    console.log(cart);
-  }
-
-  const filteredProducts = useMemo(() => {
-    console.log(products);
-    if (!products) return [];
-    return products.products.filter((product) =>
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [products, searchTerm]);
-
-  if (loading) return <p>Loading products....</p>;
-  if (error) return <p>Error: Failed to Fetch products...</p>;
   return (
-    <div className="max-w-5xl mx-auto py-8 px-6">
-      <Header cartCount={cart.length} />
-      <SearchBar value={searchTerm} onChange={setSearchTerm} />
-      <ProductGrid products={filteredProducts} onAdd={handleAddtoCart} />
-      <NewsletterForm />
-    </div>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="product/:id" element={<ProductDetailPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
+        <Route path="cart" element={<CartPage />} />
+        <Route path="checkout" element={<CheckoutPage />} />
+        <Route path="order-confirmation" element={<OrderConfirmationPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route
+          path="admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+    </Routes>
   );
 }
 

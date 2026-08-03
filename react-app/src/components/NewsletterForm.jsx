@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Box, TextField, Button, Alert } from "@mui/material";
 
 function NewsletterForm() {
   const [email, setEmail] = useState("");
@@ -7,33 +8,46 @@ function NewsletterForm() {
   function handleSubmit(e) {
     e.preventDefault();
     if (email.trim() === "") return;
-    console.log("Subscribed:", email);
     setSubmitted(true);
   }
+
   return (
-    <div className="mt-10 bg-slate-50 border border-gray-200 rounded-xl p-6 text-center">
+    <Box
+      sx={{
+        mt: 5,
+        bgcolor: "action.hover",
+        border: 1,
+        borderColor: "divider",
+        borderRadius: 2,
+        p: 3,
+        textAlign: "center",
+      }}
+    >
       {submitted ? (
-        <p className="text-green-700 font-medium">
+        <Alert severity="success" sx={{ justifyContent: "center" }}>
           Thanks - You are Subscribed!
-        </p>
+        </Alert>
       ) : (
-        <form onSubmit={handleSubmit} className="flex gap-2 justify-center">
-          <input
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "flex", gap: 1, justifyContent: "center" }}
+        >
+          <TextField
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@gmail.com"
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-64"
+            size="small"
             required
+            sx={{ width: 260 }}
           />
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <Button type="submit" variant="contained">
             Subscribe
-          </button>
-        </form>
+          </Button>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }
 

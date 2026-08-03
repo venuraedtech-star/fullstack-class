@@ -1,26 +1,29 @@
+import { Grid, Typography } from "@mui/material";
 import { ProductCard } from "./ProductCard";
 
 function ProductGrid({ products, onAdd }) {
   if (products.length === 0) {
     return (
-      <p className="text-center text-gray-500 py-10">
-        No products found. Try a different serach
-      </p>
+      <Typography align="center" color="text.secondary" sx={{ py: 5 }}>
+        No products found. Try a different search
+      </Typography>
     );
   }
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+    <Grid container spacing={2}>
       {products.map((product) => (
-        <ProductCard
-          key={product.id}
-          name={product.name}
-          price={product.price}
-          image={product.images[0]}
-          category={product.category}
-          onAdd={() => onAdd(product)}
-        />
+        <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4 }}>
+          <ProductCard
+            id={product.id}
+            title={product.title}
+            price={product.price}
+            image={product.images[0]}
+            category={product.category}
+            onAdd={() => onAdd(product)}
+          />
+        </Grid>
       ))}
-    </div>
+    </Grid>
   );
 }
 

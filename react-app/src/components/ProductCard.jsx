@@ -1,28 +1,34 @@
-export function ProductCard({ name, price, image, category, onAdd }) {
+import { Link } from "react-router-dom";
+import { Card, CardMedia, CardContent, CardActions, Typography, Button } from "@mui/material";
+
+export function ProductCard({ id, title, price, image, category, onAdd }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden">
-      <div className="bg-slate-50 h-40 flex items-center justify-center p-4">
-        <img
-          src={image}
-          alt={name}
-          className="max-h-full max-w-full object-contain"
+    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <Link to={`/product/${id}`} style={{ textDecoration: "none", color: "inherit" }}>
+        <CardMedia
+          component="img"
+          image={image}
+          alt={title}
+          sx={{ height: 160, objectFit: "contain", bgcolor: "action.hover", p: 2 }}
         />
-      </div>
-      <div className="p-4">
-        <p className="text-sm font-medium text-gray-900 mb-1">{name}</p>
-        <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">
-          {category}
-        </p>
-        <div className="flex items-center justify-between">
-          <span className="text-base font-medium text-gray-900">${price}</span>
-          <button
-            onClick={onAdd}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors">
-            Add
-          </button>
-        </div>
-      </div>
-    </div>
+        <CardContent>
+          <Typography variant="subtitle1" fontWeight={500}>
+            {title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase" }}>
+            {category}
+          </Typography>
+        </CardContent>
+      </Link>
+      <CardActions sx={{ mt: "auto", justifyContent: "space-between", px: 2, pb: 2 }}>
+        <Typography variant="body1" fontWeight={500}>
+          ${price}
+        </Typography>
+        <Button variant="contained" size="small" onClick={onAdd}>
+          Add
+        </Button>
+      </CardActions>
+    </Card>
   );
 }
 
