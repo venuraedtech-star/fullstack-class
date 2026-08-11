@@ -1,0 +1,23 @@
+[
+  {
+    "id": 2,
+    "title": "2TB External Drive",
+    "price": 64,
+    "category": "Electronics"
+  },
+  {
+    "id": 3,
+    "title": "1TB Internal SSD",
+    "price": 109,
+    "category": "Electronics"
+  },
+  {
+    "id": 1785935720551,
+    "title": "FullStack",
+    "price": 1999,
+    "images": [
+      "blob:http://localhost:5173/eeb47320-b4f3-45c5-8c18-4f75458412c0"
+    ],
+    "category": "admin-added"
+  }
+]
