@@ -1,23 +1,11 @@
 // All request/response logic lives here. Data access goes through
-// productModel — no fs/path usage in this file.
+// productModel — no pg/SQL usage in this file.
 const productModel = require("../models/productModel");
 
 async function getAllProducts(req, res, next) {
   try {
-    let products = await productModel.getAll();
     const { category, maxPrice } = req.query;
-
-    if (category) {
-      products = products.filter(
-        (p) => p.category?.toLowerCase() === category.toLowerCase(),
-      );
-    }
-
-    if (maxPrice) {
-      const max = Number(maxPrice);
-      products = products.filter((p) => p.price <= max);
-    }
-
+    const products = await productModel.getAll({ category, maxPrice });
     res.json(products);
   } catch (err) {
     next(err);
@@ -42,13 +30,8 @@ async function getProductById(req, res, next) {
 
 async function createProduct(req, res, next) {
   try {
-    const newProduct = { ...req.body, id: Date.now() };
-
-    const products = await productModel.getAll();
-    products.push(newProduct);
-    await productModel.saveAll(products);
-
-    res.status(201).json(newProduct);
+    const created = await productModel.create(req.body);
+    res.status(201).json(created);
   } catch (err) {
     next(err);
   }
@@ -57,16 +40,11 @@ async function createProduct(req, res, next) {
 async function updateProduct(req, res, next) {
   try {
     const id = Number(req.params.id);
-    const products = await productModel.getAll();
-    const existing = products.find((p) => p.id === id);
+    const updated = await productModel.update(id, req.body);
 
-    if (!existing) {
+    if (!updated) {
       return res.status(404).json({ error: `No product found with id ${id}` });
     }
-
-    const updated = { ...existing, ...req.body, id };
-    const nextProducts = products.map((p) => (p.id === id ? updated : p));
-    await productModel.saveAll(nextProducts);
 
     res.json(updated);
   } catch (err) {
@@ -77,15 +55,11 @@ async function updateProduct(req, res, next) {
 async function deleteProduct(req, res, next) {
   try {
     const id = Number(req.params.id);
-    const products = await productModel.getAll();
-    const exists = products.some((p) => p.id === id);
+    const deleted = await productModel.remove(id);
 
-    if (!exists) {
+    if (!deleted) {
       return res.status(404).json({ error: `No product found with id ${id}` });
     }
-
-    const remaining = products.filter((p) => p.id !== id);
-    await productModel.saveAll(remaining);
 
     res.status(204).end();
   } catch (err) {
