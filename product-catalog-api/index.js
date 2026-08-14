@@ -9,6 +9,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const productRoutes = require("./routes/productRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const cartRoutes = require("./routes/cartRoutes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -25,6 +27,8 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 app.use("/products", productRoutes);
+app.use("/categories", categoryRoutes);
+app.use("/cart", cartRoutes);
 
 // Catch-all — anything that didn't match a route above. Must come after
 // all real routes, since Express tries them in registration order.

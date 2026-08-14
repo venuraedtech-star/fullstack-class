@@ -19,5 +19,11 @@
       "blob:http://localhost:5173/eeb47320-b4f3-45c5-8c18-4f75458412c0"
     ],
     "category": "admin-added"
+  },
+  {
+    "title": "Wireless Mouse",
+    "price": 55,
+    "category": "Electronics",
+    "id": 1786541588104
   }
 ]

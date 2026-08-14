@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:schema": "psql -U postgres -d product_catalog -f db/schema.sql",
+    "db:seed": "psql -U postgres -d product_catalog -f db/seed.sql"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +17,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
-    "morgan": "^1.11.0"
+    "morgan": "^1.11.0",
+    "pg": "^8.23.0"
   }
 }
