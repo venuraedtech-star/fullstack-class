@@ -1,15 +1,17 @@
 const express = require("express");
 const router = express.Router();
+const rateLimit = require("express-rate-limit");
 
 const { register, login, refresh, logout } = require("../controllers/authController");
-Const rateLimit = require(‘Express-rate-limit’);
 
-Const authLimiter = rateLimit({
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window per IP
+  message: { error: "Too many login attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-windowMs: 15 * 60 * 1000, //15ms
-Max: 5, //5 attempts
-Message: { error : “Too many attempts. We are blocking the account” }
-})
 router.post("/register", register);
 router.post("/login", authLimiter, login);
 router.post("/refresh", refresh);

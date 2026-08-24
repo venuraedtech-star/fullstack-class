@@ -5,21 +5,21 @@ const BANNERS = [
     title: "Big Billion Days",
     subtitle: "Up to 80% Off on Electronics",
     cta: "Shop Now",
-    gradient: "from-blue-600 to-indigo-700",
+    gradient: "from-brand to-brand-dark",
     image: "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
   },
   {
     title: "Fashion Fiesta",
     subtitle: "Trending styles from top brands",
     cta: "Explore",
-    gradient: "from-pink-500 to-rose-600",
+    gradient: "from-[#7A3B69] to-[#4F2350]",
     image: "https://cdn.dummyjson.com/product-images/womens-dresses/calvin-klein-continuous-color-block/thumbnail.webp",
   },
   {
     title: "Mobile Bonanza",
     subtitle: "Latest smartphones at best prices",
     cta: "Buy Now",
-    gradient: "from-violet-600 to-purple-700",
+    gradient: "from-accent to-deal",
     image: "https://cdn.dummyjson.com/product-images/smartphones/iphone-5s/thumbnail.webp",
   },
 ];
@@ -47,7 +47,7 @@ function HeroBanner() {
           <p className="mb-6 text-lg text-white/90">{banner.subtitle}</p>
           <button
             type="button"
-            className="rounded-sm bg-white px-8 py-2.5 text-sm font-semibold text-flip-blue shadow transition hover:bg-flip-yellow hover:text-gray-900"
+            className="rounded-sm bg-white px-8 py-2.5 text-sm font-semibold text-brand shadow transition hover:bg-accent hover:text-gray-900"
           >
             {banner.cta}
           </button>

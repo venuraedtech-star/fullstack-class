@@ -13,14 +13,25 @@ const SORT_OPTIONS = {
 };
 
 function CategoriesPage() {
-  const [searchParams] = useSearchParams();
-  const initialCategory = searchParams.get("cat");
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  // The URL is the single source of truth for the selected category — that
+  // way header/footer links to /categories?cat=X (and the sidebar) all stay
+  // in sync even when they navigate to this same route without remounting it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCategory = searchParams.get("cat");
   const [sortValue, setSortValue] = useState("title-asc");
   const [page, setPage] = useState(1);
 
   const { data: categories } = useFetch("https://dummyjson.com/products/categories");
   const { addToCart } = useCart();
+
+  // Reset to page 1 whenever the category changes — comparing against the
+  // last-seen value during render (rather than an effect) so the reset
+  // lands in the same commit instead of causing a second render pass.
+  const [prevCategory, setPrevCategory] = useState(selectedCategory);
+  if (selectedCategory !== prevCategory) {
+    setPrevCategory(selectedCategory);
+    setPage(1);
+  }
 
   const productsUrl = useMemo(() => {
     const base = selectedCategory
@@ -34,8 +45,7 @@ function CategoriesPage() {
   const { data, loading, error } = useFetch(productsUrl);
 
   function handleSelectCategory(slug) {
-    setSelectedCategory(slug);
-    setPage(1);
+    setSearchParams(slug ? { cat: slug } : {});
   }
 
   const pageCount = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
@@ -56,7 +66,7 @@ function CategoriesPage() {
               onClick={() => handleSelectCategory(null)}
               className={`w-full rounded px-3 py-2 text-left text-sm transition ${
                 selectedCategory === null
-                  ? "bg-flip-blue/10 font-medium text-flip-blue"
+                  ? "bg-brand/10 font-medium text-brand"
                   : "text-gray-700 hover:bg-gray-50"
               }`}
             >
@@ -70,7 +80,7 @@ function CategoriesPage() {
                 onClick={() => handleSelectCategory(category.slug)}
                 className={`w-full rounded px-3 py-2 text-left text-sm capitalize transition ${
                   selectedCategory === category.slug
-                    ? "bg-flip-blue/10 font-medium text-flip-blue"
+                    ? "bg-brand/10 font-medium text-brand"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -92,7 +102,7 @@ function CategoriesPage() {
                 setSortValue(event.target.value);
                 setPage(1);
               }}
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-flip-blue"
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand"
             >
               {Object.entries(SORT_OPTIONS).map(([value, { label }]) => (
                 <option key={value} value={value}>
@@ -105,7 +115,7 @@ function CategoriesPage() {
 
         {loading && (
           <div className="flex justify-center py-16">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-flip-blue border-t-transparent" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
           </div>
         )}
 

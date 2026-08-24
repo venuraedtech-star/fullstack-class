@@ -12,6 +12,7 @@ const productRoutes = require("./routes/productRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const authRoutes = require("./routes/authRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -31,6 +32,7 @@ app.use("/products", productRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/cart", cartRoutes);
 app.use("/auth", authRoutes);
+app.use("/orders", orderRoutes);
 
 // Catch-all — anything that didn't match a route above. Must come after
 // all real routes, since Express tries them in registration order.

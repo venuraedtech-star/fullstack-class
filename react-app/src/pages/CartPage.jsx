@@ -16,7 +16,7 @@ function CartPage() {
         <p className="mb-6 text-sm text-gray-500">Add items to it now</p>
         <Link
           to="/"
-          className="inline-block rounded-sm bg-flip-blue px-8 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-block rounded-sm bg-brand px-8 py-2.5 text-sm font-medium text-white hover:bg-brand-dark"
         >
           Continue Shopping
         </Link>
@@ -46,7 +46,7 @@ function CartPage() {
             <div className="min-w-0 flex-1">
               <Link
                 to={`/product/${product.id}`}
-                className="line-clamp-2 text-sm font-medium text-gray-800 hover:text-flip-blue"
+                className="line-clamp-2 text-sm font-medium text-gray-800 hover:text-brand"
               >
                 {product.title}
               </Link>
@@ -54,7 +54,7 @@ function CartPage() {
               <button
                 type="button"
                 onClick={() => removeFromCart(product.id)}
-                className="mt-2 text-sm font-medium text-flip-blue hover:underline"
+                className="mt-2 text-sm font-medium text-brand hover:underline"
               >
                 Remove
               </button>
@@ -96,7 +96,7 @@ function CartPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Delivery Charges</span>
-            <span className="text-[#388e3c]">FREE</span>
+            <span className="text-success">FREE</span>
           </div>
         </div>
         <div className="my-4 border-t border-dashed" />
@@ -107,7 +107,7 @@ function CartPage() {
         <button
           type="button"
           onClick={() => navigate("/checkout")}
-          className="w-full rounded-sm bg-flip-orange py-3 text-sm font-medium text-white shadow transition hover:bg-orange-600"
+          className="w-full rounded-sm bg-deal py-3 text-sm font-medium text-white shadow transition hover:bg-deal-dark"
         >
           PLACE ORDER
         </button>

@@ -13,7 +13,7 @@ function ProductSection({ title, products, onAdd }) {
     <section className="mt-4">
       <div className="mb-3 flex items-center justify-between rounded-sm bg-white px-4 py-3 shadow-sm">
         <h2 className="text-lg font-medium text-gray-800">{title}</h2>
-        <span className="text-sm font-medium text-flip-blue">View All</span>
+        <span className="text-sm font-medium text-brand">View All</span>
       </div>
       <ProductGrid products={products} onAdd={onAdd} columns="compact" />
     </section>
@@ -56,7 +56,7 @@ function HomePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-flip-blue border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
       </div>
     );
   }

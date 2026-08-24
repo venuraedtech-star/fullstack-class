@@ -3,14 +3,17 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-flip-blue: #2874f0;
-  --color-flip-yellow: #ffe500;
-  --color-flip-bg: #f1f3f6;
-  --color-flip-green: #388e3c;
-  --color-flip-orange: #fb641b;
+  --color-brand: #0e7c86;
+  --color-brand-dark: #095a62;
+  --color-accent: #f5a623;
+  --color-cream: #faf7f2;
+  --color-success: #1f9254;
+  --color-deal: #e4572e;
+  --color-deal-dark: #c2431a;
+  --color-ink: #0b2b2e;
 }
 
 body {
-  background-color: var(--color-flip-bg);
+  background-color: var(--color-cream);
   font-family: "Inter", system-ui, -apple-system, sans-serif;
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import useCart from "../hooks/useCart";
+import axiosInstance from "../api/axiosInstance";
 import { formatPrice, getProductImage } from "../utils/productUtils";
 
 function CheckoutPage() {
@@ -17,6 +18,8 @@ function CheckoutPage() {
   });
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [card, setCard] = useState({ number: "", expiry: "", cvv: "" });
+  const [submitError, setSubmitError] = useState("");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   if (cart.length === 0) {
     return <Navigate to="/cart" replace />;
@@ -30,14 +33,33 @@ function CheckoutPage() {
     return (event) => setCard((prev) => ({ ...prev, [field]: event.target.value }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    clearCart();
-    navigate("/order-confirmation", { state: { total: cartTotal } });
+    setSubmitError("");
+    setIsPlacingOrder(true);
+    try {
+      const { data: order } = await axiosInstance.post("/orders", {
+        items: cart.map(({ product, quantity }) => ({
+          productId: product.id,
+          title: product.title,
+          price: product.price,
+          quantity,
+          imageUrl: getProductImage(product),
+        })),
+        totalAmount: cartTotal,
+        address,
+        paymentMethod,
+      });
+      clearCart();
+      navigate("/order-confirmation", { state: { total: cartTotal, orderId: order.id } });
+    } catch {
+      setSubmitError("Could not place your order — make sure the API server is running (cd product-catalog-api && npm start).");
+      setIsPlacingOrder(false);
+    }
   }
 
   const inputClass =
-    "w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-flip-blue focus:ring-1 focus:ring-flip-blue";
+    "w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:flex-row">
@@ -103,7 +125,7 @@ function CheckoutPage() {
                 value="card"
                 checked={paymentMethod === "card"}
                 onChange={(event) => setPaymentMethod(event.target.value)}
-                className="accent-flip-blue"
+                className="accent-brand"
               />
               Credit / Debit Card
             </label>
@@ -114,7 +136,7 @@ function CheckoutPage() {
                 value="cod"
                 checked={paymentMethod === "cod"}
                 onChange={(event) => setPaymentMethod(event.target.value)}
-                className="accent-flip-blue"
+                className="accent-brand"
               />
               Cash on Delivery
             </label>
@@ -172,11 +194,15 @@ function CheckoutPage() {
             <span>Total</span>
             <span>{formatPrice(cartTotal)}</span>
           </div>
+          {submitError && (
+            <p className="mb-3 text-sm text-red-600">{submitError}</p>
+          )}
           <button
             type="submit"
-            className="w-full rounded-sm bg-flip-orange py-3 text-sm font-medium text-white hover:bg-orange-600"
+            disabled={isPlacingOrder}
+            className="w-full rounded-sm bg-deal py-3 text-sm font-medium text-white hover:bg-deal-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Confirm Order
+            {isPlacingOrder ? "Placing Order..." : "Confirm Order"}
           </button>
         </div>
       </div>

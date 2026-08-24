@@ -70,8 +70,47 @@ model User {
   role          String         @default("customer")
   createdAt     DateTime       @default(now()) @map("created_at")
   refreshTokens RefreshToken[]
+  orders        Order[]
 
   @@map("users")
+}
+
+// The storefront's cart/checkout works against the dummyjson.com catalog
+// (external numeric ids), not this API's own `products` table — the two
+// catalogs are unrelated. So OrderItem snapshots the product's title/price/
+// image at purchase time by value instead of a foreign key, which is also
+// just correct order-history practice (a later price change shouldn't
+// rewrite what a customer already paid).
+model Order {
+  id            Int         @id @default(autoincrement())
+  userId        Int         @map("user_id")
+  user          User        @relation(fields: [userId], references: [id])
+  totalAmount   Decimal     @db.Decimal(10, 2) @map("total_amount")
+  status        String      @default("placed")
+  fullName      String      @map("full_name")
+  addressLine   String      @map("address_line")
+  city          String
+  state         String
+  zip           String
+  phone         String
+  paymentMethod String      @map("payment_method")
+  items         OrderItem[]
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                Int     @id @default(autoincrement())
+  orderId           Int     @map("order_id")
+  order             Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  externalProductId Int     @map("external_product_id")
+  title             String
+  price             Decimal @db.Decimal(10, 2)
+  quantity          Int
+  imageUrl          String? @map("image_url")
+
+  @@map("order_items")
 }
 
 model RefreshToken {
