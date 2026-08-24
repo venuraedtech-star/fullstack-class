@@ -12,7 +12,7 @@ function ProductDetailPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-24">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-flip-blue border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
       </div>
     );
   }
@@ -50,7 +50,7 @@ function ProductDetailPage() {
               rating={product.rating ?? 4.2}
               reviewCount={Math.floor(product.stock * 2.5) || 120}
             />
-            <span className="text-sm text-[#388e3c] font-medium">
+            <span className="text-sm text-success font-medium">
               {Math.round(product.discountPercentage ?? 0)}% off
             </span>
           </div>
@@ -63,13 +63,13 @@ function ProductDetailPage() {
           <p className="mb-6 text-sm leading-relaxed text-gray-600">{product.description}</p>
 
           <div className="mb-6 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded bg-flip-bg px-3 py-2">
+            <div className="rounded bg-cream px-3 py-2">
               <span className="text-gray-500">Category</span>
               <p className="font-medium capitalize">{product.category}</p>
             </div>
-            <div className="rounded bg-flip-bg px-3 py-2">
+            <div className="rounded bg-cream px-3 py-2">
               <span className="text-gray-500">Stock</span>
-              <p className="font-medium text-[#388e3c]">
+              <p className="font-medium text-success">
                 {product.stock > 0 ? `${product.stock} available` : "Out of stock"}
               </p>
             </div>
@@ -79,14 +79,14 @@ function ProductDetailPage() {
             <button
               type="button"
               onClick={() => addToCart(product)}
-              className="rounded-sm bg-flip-orange px-10 py-3 text-sm font-medium text-white shadow transition hover:bg-orange-600"
+              className="rounded-sm bg-deal px-10 py-3 text-sm font-medium text-white shadow transition hover:bg-deal-dark"
             >
               ADD TO CART
             </button>
             <Link
               to="/cart"
               onClick={() => addToCart(product)}
-              className="rounded-sm bg-flip-orange/90 px-10 py-3 text-sm font-medium text-white shadow transition hover:bg-orange-600"
+              className="rounded-sm bg-deal/90 px-10 py-3 text-sm font-medium text-white shadow transition hover:bg-deal-dark"
             >
               BUY NOW
             </Link>

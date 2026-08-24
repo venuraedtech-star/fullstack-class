@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import useFetch from "../hooks/useFetch";
 import useAuth from "../hooks/useAuth";
+import axiosInstance from "../api/axiosInstance";
 
 const API_BASE = "http://localhost:3000";
 
@@ -12,6 +13,13 @@ const API_BASE = "http://localhost:3000";
 // the client has to generate one; Date.now() is unique enough for a demo.
 function generateProductId() {
   return Date.now();
+}
+
+function deriveErrorMessage(err, action) {
+  if (err.response?.status === 403) {
+    return "You don't have permission to do this — an admin account is required.";
+  }
+  return `Could not ${action} product — make sure the API server is running (cd product-catalog-api && npm start).`;
 }
 
 function AdminPage() {
@@ -51,16 +59,11 @@ function AdminPage() {
   async function handleDelete(id) {
     setSubmitError("");
     try {
-      const response = await fetch(`${API_BASE}/products/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Delete failed");
+      await axiosInstance.delete(`/products/${id}`);
       setAddedProducts((prev) => prev.filter((product) => product.id !== id));
       setDeletedIds((prev) => new Set(prev).add(id));
-    } catch {
-      setSubmitError(
-        "Could not delete product — make sure the API server is running (cd product-catalog-api && npm start).",
-      );
+    } catch (err) {
+      setSubmitError(deriveErrorMessage(err, "delete"));
     }
   }
 
@@ -70,25 +73,17 @@ function AdminPage() {
       id: generateProductId(),
       title: title.trim(),
       price: Number(price),
-      images: [imagePreview],
+      image_url: imagePreview,
       category: "admin-added",
     };
 
     try {
-      const response = await fetch(`${API_BASE}/products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProduct),
-      });
-      if (!response.ok) throw new Error("Create failed");
-      const created = await response.json();
+      const { data: created } = await axiosInstance.post("/products", newProduct);
       setAddedProducts((prev) => [created, ...prev]);
       reset();
       setImagePreview("");
-    } catch {
-      setSubmitError(
-        "Could not add product — make sure the API server is running (cd product-catalog-api && npm start).",
-      );
+    } catch (err) {
+      setSubmitError(deriveErrorMessage(err, "add"));
     }
   }
 

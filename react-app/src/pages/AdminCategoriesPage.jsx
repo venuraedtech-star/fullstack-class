@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import useFetch from "../hooks/useFetch";
+import axiosInstance from "../api/axiosInstance";
 
 const API_BASE = "http://localhost:3000";
 
@@ -31,13 +32,7 @@ function AdminCategoriesPage() {
   async function onSubmit({ name }) {
     setSubmitError("");
     try {
-      const response = await fetch(`${API_BASE}/categories`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-      if (!response.ok) throw new Error("Create failed");
-      const created = await response.json();
+      const { data: created } = await axiosInstance.post("/categories", { name: name.trim() });
       setAddedCategories((prev) => [created, ...prev]);
       reset();
     } catch {
@@ -50,22 +45,17 @@ function AdminCategoriesPage() {
   async function handleDelete(id) {
     setSubmitError("");
     try {
-      const response = await fetch(`${API_BASE}/categories/${id}`, {
-        method: "DELETE",
-      });
-      if (response.status === 409) {
-        const body = await response.json();
-        throw new Error(body.error);
-      }
-      if (!response.ok) throw new Error("Delete failed");
+      await axiosInstance.delete(`/categories/${id}`);
       setAddedCategories((prev) => prev.filter((category) => category.id !== id));
       setDeletedIds((prev) => new Set(prev).add(id));
     } catch (err) {
-      setSubmitError(
-        err.message === "Delete failed"
-          ? "Could not delete category — make sure the API server is running (cd product-catalog-api && npm start)."
-          : err.message,
-      );
+      if (err.response?.status === 409) {
+        setSubmitError(err.response.data.error);
+      } else {
+        setSubmitError(
+          "Could not delete category — make sure the API server is running (cd product-catalog-api && npm start).",
+        );
+      }
     }
   }
 

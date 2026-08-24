@@ -37,9 +37,9 @@ function CategoryStrip({ categories }) {
           <Link
             key={category.slug}
             to={`/categories?cat=${category.slug}`}
-            className="flex min-w-[72px] flex-col items-center gap-1 text-center transition hover:text-flip-blue"
+            className="flex min-w-[72px] flex-col items-center gap-1 text-center transition hover:text-brand"
           >
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-flip-bg text-2xl">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cream text-2xl">
               {CATEGORY_ICONS[category.slug] ?? "📦"}
             </span>
             <span className="max-w-[72px] truncate text-xs font-medium text-gray-700">

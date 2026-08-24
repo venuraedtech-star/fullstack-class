@@ -17,7 +17,7 @@ export function ProductCard({ product, onAdd }) {
             className="max-h-full max-w-full object-contain transition group-hover:scale-105"
           />
           {discountPercentage > 0 && (
-            <span className="absolute left-0 top-0 rounded-br bg-[#388e3c] px-2 py-0.5 text-xs font-medium text-white">
+            <span className="absolute left-0 top-0 rounded-br bg-success px-2 py-0.5 text-xs font-medium text-white">
               {Math.round(discountPercentage)}% off
             </span>
           )}
@@ -34,7 +34,7 @@ export function ProductCard({ product, onAdd }) {
           {discountPercentage > 0 && (
             <>
               <span className="text-sm text-gray-500 line-through">{formatPrice(mrp)}</span>
-              <span className="text-xs font-medium text-[#388e3c]">
+              <span className="text-xs font-medium text-success">
                 {Math.round(discountPercentage)}% off
               </span>
             </>
@@ -46,7 +46,7 @@ export function ProductCard({ product, onAdd }) {
         <button
           type="button"
           onClick={() => onAdd(product)}
-          className="mt-3 w-full rounded-sm border border-flip-blue bg-white py-2 text-sm font-medium text-flip-blue transition hover:bg-flip-blue hover:text-white"
+          className="mt-3 w-full rounded-sm border border-brand bg-white py-2 text-sm font-medium text-brand transition hover:bg-brand hover:text-white"
         >
           Add to Cart
         </button>

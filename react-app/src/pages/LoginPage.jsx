@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import useAuth from "../hooks/useAuth";
 
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [serverError, setServerError] = useState("");
 
   const {
@@ -18,7 +19,7 @@ function LoginPage() {
     setServerError("");
     try {
       await login(email, password);
-      navigate("/admin");
+      navigate(location.state?.from?.pathname ?? "/", { replace: true });
     } catch (err) {
       setServerError(err.message);
     }

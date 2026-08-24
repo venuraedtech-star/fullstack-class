@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useTheme from "../hooks/useTheme";
 import useAuth from "../hooks/useAuth";
 import useCart from "../hooks/useCart";
@@ -55,6 +55,12 @@ function AdminHeader() {
   const { darkMode, toggleTheme } = useTheme();
   const { logout } = useAuth();
   const { cartCount } = useCart();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-4 text-gray-300">
@@ -86,7 +92,7 @@ function AdminHeader() {
 
         <button
           type="button"
-          onClick={logout}
+          onClick={handleLogout}
           className="flex items-center gap-1.5 rounded-lg border border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:border-red-500 hover:text-red-400">
           <LogoutIcon className="h-4 w-4" />
           Logout
