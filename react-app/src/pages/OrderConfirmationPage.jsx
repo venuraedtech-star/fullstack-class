@@ -1,26 +1,28 @@
 import { Link, useLocation } from "react-router-dom";
-import { Box, Typography, Button } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { formatPrice } from "../utils/productUtils";
 
 function OrderConfirmationPage() {
   const location = useLocation();
   const total = location.state?.total;
 
   return (
-    <Box sx={{ textAlign: "center", py: 8 }}>
-      <CheckCircleIcon color="success" sx={{ fontSize: 64, mb: 2 }} />
-      <Typography variant="h5" gutterBottom>
-        Order placed successfully!
-      </Typography>
+    <div className="rounded-sm bg-white py-16 text-center shadow-sm">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#388e3c]/10">
+        <svg className="h-10 w-10 text-[#388e3c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h1 className="mb-2 text-2xl font-medium text-gray-900">Order placed successfully!</h1>
       {typeof total === "number" && (
-        <Typography color="text.secondary" sx={{ mb: 2 }}>
-          Total charged: ${total.toFixed(2)}
-        </Typography>
+        <p className="mb-6 text-gray-500">Total paid: {formatPrice(total)}</p>
       )}
-      <Button component={Link} to="/" variant="contained" sx={{ mt: 2 }}>
+      <Link
+        to="/"
+        className="inline-block rounded-sm bg-flip-blue px-8 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+      >
         Continue Shopping
-      </Button>
-    </Box>
+      </Link>
+    </div>
   );
 }
 

@@ -1,18 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Divider,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-} from "@mui/material";
 import useCart from "../hooks/useCart";
+import { formatPrice, getProductImage } from "../utils/productUtils";
 
 function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
@@ -34,91 +23,164 @@ function CheckoutPage() {
   }
 
   function handleAddressChange(field) {
-    return (e) => setAddress((prev) => ({ ...prev, [field]: e.target.value }));
+    return (event) => setAddress((prev) => ({ ...prev, [field]: event.target.value }));
   }
 
   function handleCardChange(field) {
-    return (e) => setCard((prev) => ({ ...prev, [field]: e.target.value }));
+    return (event) => setCard((prev) => ({ ...prev, [field]: event.target.value }));
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit(event) {
+    event.preventDefault();
     clearCart();
     navigate("/order-confirmation", { state: { total: cartTotal } });
   }
 
+  const inputClass =
+    "w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-flip-blue focus:ring-1 focus:ring-flip-blue";
+
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 3 }}
-    >
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
-        <Card>
-          <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Typography variant="h6">Shipping Address</Typography>
-            <TextField label="Full Name" required value={address.fullName} onChange={handleAddressChange("fullName")} />
-            <TextField label="Address Line" required value={address.addressLine} onChange={handleAddressChange("addressLine")} />
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField label="City" required fullWidth value={address.city} onChange={handleAddressChange("city")} />
-              <TextField label="State" required fullWidth value={address.state} onChange={handleAddressChange("state")} />
-              <TextField label="ZIP" required fullWidth value={address.zip} onChange={handleAddressChange("zip")} />
-            </Box>
-            <TextField label="Phone" required value={address.phone} onChange={handleAddressChange("phone")} />
-          </CardContent>
-        </Card>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:flex-row">
+      <div className="flex-1 space-y-4">
+        <div className="rounded-sm bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-medium text-gray-800">Delivery Address</h2>
+          <div className="space-y-3">
+            <input
+              className={inputClass}
+              placeholder="Full Name"
+              required
+              value={address.fullName}
+              onChange={handleAddressChange("fullName")}
+            />
+            <input
+              className={inputClass}
+              placeholder="Address (Area and Street)"
+              required
+              value={address.addressLine}
+              onChange={handleAddressChange("addressLine")}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <input
+                className={inputClass}
+                placeholder="City"
+                required
+                value={address.city}
+                onChange={handleAddressChange("city")}
+              />
+              <input
+                className={inputClass}
+                placeholder="State"
+                required
+                value={address.state}
+                onChange={handleAddressChange("state")}
+              />
+              <input
+                className={inputClass}
+                placeholder="PIN Code"
+                required
+                value={address.zip}
+                onChange={handleAddressChange("zip")}
+              />
+            </div>
+            <input
+              className={inputClass}
+              placeholder="Phone Number"
+              required
+              value={address.phone}
+              onChange={handleAddressChange("phone")}
+            />
+          </div>
+        </div>
 
-        <Card>
-          <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Typography variant="h6">Payment</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Demo checkout — no real payment is processed.
-            </Typography>
-            <RadioGroup
-              row
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            >
-              <FormControlLabel value="card" control={<Radio />} label="Card" />
-              <FormControlLabel value="cod" control={<Radio />} label="Cash on Delivery" />
-            </RadioGroup>
-            {paymentMethod === "card" && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <TextField label="Card Number" required value={card.number} onChange={handleCardChange("number")} />
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <TextField label="Expiry (MM/YY)" required fullWidth value={card.expiry} onChange={handleCardChange("expiry")} />
-                  <TextField label="CVV" required fullWidth value={card.cvv} onChange={handleCardChange("cvv")} />
-                </Box>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
-      </Box>
+        <div className="rounded-sm bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-medium text-gray-800">Payment Options</h2>
+          <p className="mb-4 text-xs text-gray-500">Demo checkout — no real payment is processed.</p>
+          <div className="mb-4 flex gap-4">
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="payment"
+                value="card"
+                checked={paymentMethod === "card"}
+                onChange={(event) => setPaymentMethod(event.target.value)}
+                className="accent-flip-blue"
+              />
+              Credit / Debit Card
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="payment"
+                value="cod"
+                checked={paymentMethod === "cod"}
+                onChange={(event) => setPaymentMethod(event.target.value)}
+                className="accent-flip-blue"
+              />
+              Cash on Delivery
+            </label>
+          </div>
+          {paymentMethod === "card" && (
+            <div className="space-y-3">
+              <input
+                className={inputClass}
+                placeholder="Card Number"
+                required
+                value={card.number}
+                onChange={handleCardChange("number")}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  className={inputClass}
+                  placeholder="Valid Thru (MM/YY)"
+                  required
+                  value={card.expiry}
+                  onChange={handleCardChange("expiry")}
+                />
+                <input
+                  className={inputClass}
+                  placeholder="CVV"
+                  required
+                  value={card.cvv}
+                  onChange={handleCardChange("cvv")}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-      <Card sx={{ width: { xs: "100%", sm: 300 }, flexShrink: 0, height: "fit-content" }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Order Summary
-          </Typography>
+      <div className="h-fit rounded-sm bg-white p-6 shadow-sm lg:w-80">
+        <h2 className="mb-4 border-b pb-3 text-gray-500">ORDER SUMMARY</h2>
+        <div className="mb-4 max-h-48 space-y-3 overflow-y-auto">
           {cart.map(({ product, quantity }) => (
-            <Box key={product.id} sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 180 }}>
-                {product.title} x{quantity}
-              </Typography>
-              <Typography variant="body2">${(product.price * quantity).toFixed(2)}</Typography>
-            </Box>
+            <div key={product.id} className="flex gap-3">
+              <img
+                src={getProductImage(product)}
+                alt=""
+                className="h-12 w-12 object-contain"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs text-gray-700">{product.title}</p>
+                <p className="text-xs text-gray-500">Qty: {quantity}</p>
+              </div>
+              <span className="text-sm">{formatPrice(product.price * quantity)}</span>
+            </div>
           ))}
-          <Divider sx={{ my: 1 }} />
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-            <Typography variant="subtitle1">Total</Typography>
-            <Typography variant="subtitle1">${cartTotal.toFixed(2)}</Typography>
-          </Box>
-          <Button type="submit" fullWidth variant="contained">
-            Place Order
-          </Button>
-        </CardContent>
-      </Card>
-    </Box>
+        </div>
+        <div className="border-t border-dashed pt-4">
+          <div className="mb-4 flex justify-between font-medium">
+            <span>Total</span>
+            <span>{formatPrice(cartTotal)}</span>
+          </div>
+          <button
+            type="submit"
+            className="w-full rounded-sm bg-flip-orange py-3 text-sm font-medium text-white hover:bg-orange-600"
+          >
+            Confirm Order
+          </button>
+        </div>
+      </div>
+    </form>
   );
 }
 

@@ -1,8 +1,43 @@
-import { useContext } from "react";
-import { AuthContext } from "../context/authContext";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  login as loginThunk,
+  register as registerThunk,
+  logout as logoutThunk,
+} from "../store/authSlice";
 
 export default function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  const dispatch = useDispatch();
+  const { user, accessToken, refreshToken, status, error } = useSelector(
+    (state) => state.auth,
+  );
+
+  async function login(email, password) {
+    const result = await dispatch(loginThunk({ email, password }));
+    if (loginThunk.rejected.match(result)) {
+      throw new Error(result.payload || "Login failed");
+    }
+  }
+
+  async function register(name, email, password) {
+    const result = await dispatch(registerThunk({ name, email, password }));
+    if (registerThunk.rejected.match(result)) {
+      throw new Error(result.payload || "Registration failed");
+    }
+  }
+
+  function logout() {
+    dispatch(logoutThunk());
+  }
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+    status,
+    error,
+    isLoggedIn: !!user,
+    login,
+    register,
+    logout,
+  };
 }

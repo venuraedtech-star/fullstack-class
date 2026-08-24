@@ -1,44 +1,99 @@
-import { useParams } from "react-router-dom";
-import { Box, Typography, Button } from "@mui/material";
+import { useParams, Link } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useCart from "../hooks/useCart";
+import StarRating from "../components/StarRating";
+import { formatPrice, getMrp, getProductImage } from "../utils/productUtils";
 
 function ProductDetailPage() {
   const { id } = useParams();
-  const {
-    data: product,
-    loading,
-    error,
-  } = useFetch(`https://dummyjson.com/products/${id}`);
+  const { data: product, loading, error } = useFetch(`https://dummyjson.com/products/${id}`);
   const { addToCart } = useCart();
 
-  if (loading) return <Typography>Loading product....</Typography>;
-  if (error) return <Typography color="error">Error: Failed to fetch product...</Typography>;
+  if (loading) {
+    return (
+      <div className="flex justify-center py-24">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-flip-blue border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-sm bg-white p-8 text-center text-red-600 shadow-sm">
+        Failed to load product.
+      </div>
+    );
+  }
+
   if (!product) return null;
 
+  const mrp = getMrp(product.price, product.discountPercentage);
+  const image = getProductImage(product);
+
   return (
-    <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-      <Box
-        component="img"
-        src={product.images[0]}
-        alt={product.title}
-        sx={{ width: 320, maxWidth: "100%", objectFit: "contain", bgcolor: "action.hover", borderRadius: 2, p: 2 }}
-      />
-      <Box sx={{ flex: 1, minWidth: 240 }}>
-        <Typography variant="h4" gutterBottom>
-          {product.title}
-        </Typography>
-        <Typography color="text.secondary" sx={{ mb: 2 }}>
-          {product.description}
-        </Typography>
-        <Typography variant="h5" sx={{ mb: 3 }}>
-          ${product.price}
-        </Typography>
-        <Button variant="contained" onClick={() => addToCart(product)}>
-          Add to Cart
-        </Button>
-      </Box>
-    </Box>
+    <div className="rounded-sm bg-white shadow-sm">
+      <div className="flex flex-col gap-6 p-6 md:flex-row md:gap-10 md:p-8">
+        <div className="flex flex-1 items-center justify-center border-b pb-6 md:border-b-0 md:border-r md:pb-0 md:pr-8">
+          <img
+            src={image}
+            alt={product.title}
+            className="max-h-80 max-w-full object-contain"
+          />
+        </div>
+
+        <div className="flex-1">
+          <p className="mb-1 text-sm capitalize text-gray-500">{product.brand}</p>
+          <h1 className="mb-3 text-xl font-medium text-gray-900 md:text-2xl">{product.title}</h1>
+
+          <div className="mb-4 flex items-center gap-3">
+            <StarRating
+              rating={product.rating ?? 4.2}
+              reviewCount={Math.floor(product.stock * 2.5) || 120}
+            />
+            <span className="text-sm text-[#388e3c] font-medium">
+              {Math.round(product.discountPercentage ?? 0)}% off
+            </span>
+          </div>
+
+          <div className="mb-4 flex items-baseline gap-3">
+            <span className="text-3xl font-medium text-gray-900">{formatPrice(product.price)}</span>
+            <span className="text-lg text-gray-500 line-through">{formatPrice(mrp)}</span>
+          </div>
+
+          <p className="mb-6 text-sm leading-relaxed text-gray-600">{product.description}</p>
+
+          <div className="mb-6 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded bg-flip-bg px-3 py-2">
+              <span className="text-gray-500">Category</span>
+              <p className="font-medium capitalize">{product.category}</p>
+            </div>
+            <div className="rounded bg-flip-bg px-3 py-2">
+              <span className="text-gray-500">Stock</span>
+              <p className="font-medium text-[#388e3c]">
+                {product.stock > 0 ? `${product.stock} available` : "Out of stock"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => addToCart(product)}
+              className="rounded-sm bg-flip-orange px-10 py-3 text-sm font-medium text-white shadow transition hover:bg-orange-600"
+            >
+              ADD TO CART
+            </button>
+            <Link
+              to="/cart"
+              onClick={() => addToCart(product)}
+              className="rounded-sm bg-flip-orange/90 px-10 py-3 text-sm font-medium text-white shadow transition hover:bg-orange-600"
+            >
+              BUY NOW
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
