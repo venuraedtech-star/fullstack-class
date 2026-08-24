@@ -10,11 +10,13 @@ const {
   deleteProduct,
 } = require("../controllers/productController");
 const validateProduct = require("../middleware/validateProduct");
+const authenticate = require("../middleware/authenticate");
+const authorize = require("../middleware/authorize");
 
 router.get("/", getAllProducts);
 router.get("/:id", getProductById);
-router.post("/", validateProduct, createProduct);
-router.put("/:id", validateProduct, updateProduct);
-router.delete("/:id", deleteProduct);
+router.post("/", authenticate, authorize("admin"), validateProduct, createProduct);
+router.put("/:id", authenticate, authorize("admin"), validateProduct, updateProduct);
+router.delete("/:id", authenticate, authorize("admin"), deleteProduct);
 
 module.exports = router;

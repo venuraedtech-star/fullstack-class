@@ -1,11 +1,11 @@
 // All request/response logic lives here. Data access goes through
-// productModel — no pg/SQL usage in this file.
+// productModel — no Prisma/SQL usage in this file.
 const productModel = require("../models/productModel");
 
 async function getAllProducts(req, res, next) {
   try {
-    const { category, maxPrice } = req.query;
-    const products = await productModel.getAll({ category, maxPrice });
+    const { category, maxPrice, sort, page, pageSize } = req.query;
+    const products = await productModel.getAll({ category, maxPrice, sort, page, pageSize });
     res.json(products);
   } catch (err) {
     next(err);
