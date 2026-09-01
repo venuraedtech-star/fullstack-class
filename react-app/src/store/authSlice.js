@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axiosInstance from "../api/axiosInstance";
+import axiosInstance, { setAccessToken } from "../api/axiosInstance";
 
 function loadUser() {
   try {
@@ -10,24 +10,26 @@ function loadUser() {
   }
 }
 
-function persistAuth({ user, accessToken, refreshToken }) {
+// The access token is intentionally NOT persisted here — it lives in
+// memory only (see api/axiosInstance.js's setAccessToken). `user` is still
+// persisted so the UI can show "logged in" optimistically on reload while
+// refreshOnLoad re-establishes a real access token from the httpOnly
+// refresh cookie (whose /auth/refresh response returns only the token,
+// not the user).
+function persistUser(user) {
   localStorage.setItem("user", JSON.stringify(user));
-  localStorage.setItem("accessToken", accessToken);
-  localStorage.setItem("refreshToken", refreshToken);
 }
 
-function clearPersistedAuth() {
+function clearPersistedUser() {
   localStorage.removeItem("user");
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
 }
 
 const initialState = {
   user: loadUser(),
-  accessToken: localStorage.getItem("accessToken"),
-  refreshToken: localStorage.getItem("refreshToken"),
+  accessToken: null,
   status: "idle",
   error: null,
+  loading: true,
 };
 
 export const login = createAsyncThunk(
@@ -54,12 +56,14 @@ export const register = createAsyncThunk(
   },
 );
 
-export const refreshAccessToken = createAsyncThunk(
-  "auth/refresh",
-  async (_, { getState, rejectWithValue }) => {
+// Runs once when the app boots (dispatched from App.jsx) to silently
+// exchange the httpOnly refresh cookie for a fresh access token, so a
+// page reload doesn't force a full re-login.
+export const refreshOnLoad = createAsyncThunk(
+  "auth/refreshOnLoad",
+  async (_, { rejectWithValue }) => {
     try {
-      const { refreshToken } = getState().auth;
-      const { data } = await axiosInstance.post("/auth/refresh", { refreshToken });
+      const { data } = await axiosInstance.post("/auth/refresh");
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Session expired");
@@ -67,10 +71,9 @@ export const refreshAccessToken = createAsyncThunk(
   },
 );
 
-export const logout = createAsyncThunk("auth/logout", async (_, { getState }) => {
-  const { refreshToken } = getState().auth;
+export const logout = createAsyncThunk("auth/logout", async () => {
   try {
-    await axiosInstance.post("/auth/logout", { refreshToken });
+    await axiosInstance.post("/auth/logout");
   } catch {
     // Best-effort — local session is cleared below regardless of whether
     // the server-side refresh token row was successfully deleted.
@@ -91,8 +94,8 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
-        state.refreshToken = action.payload.refreshToken;
-        persistAuth(action.payload);
+        setAccessToken(action.payload.accessToken);
+        persistUser(action.payload.user);
       })
       .addCase(login.rejected, (state, action) => {
         state.status = "failed";
@@ -106,28 +109,33 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
-        state.refreshToken = action.payload.refreshToken;
-        persistAuth(action.payload);
+        setAccessToken(action.payload.accessToken);
+        persistUser(action.payload.user);
       })
       .addCase(register.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       })
-      .addCase(refreshAccessToken.fulfilled, (state, action) => {
-        state.accessToken = action.payload.accessToken;
-        localStorage.setItem("accessToken", action.payload.accessToken);
+      .addCase(refreshOnLoad.pending, (state) => {
+        state.loading = true;
       })
-      .addCase(refreshAccessToken.rejected, (state) => {
+      .addCase(refreshOnLoad.fulfilled, (state, action) => {
+        state.accessToken = action.payload.accessToken;
+        setAccessToken(action.payload.accessToken);
+        state.loading = false;
+      })
+      .addCase(refreshOnLoad.rejected, (state) => {
         state.user = null;
         state.accessToken = null;
-        state.refreshToken = null;
-        clearPersistedAuth();
+        setAccessToken(null);
+        clearPersistedUser();
+        state.loading = false;
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.accessToken = null;
-        state.refreshToken = null;
-        clearPersistedAuth();
+        setAccessToken(null);
+        clearPersistedUser();
       });
   },
 });

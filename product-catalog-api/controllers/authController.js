@@ -37,6 +37,27 @@ async function generateRefreshToken(user) {
   return token;
 }
 
+// sameSite: "none" is required for the cookie to be sent on cross-site
+// requests (the deployed frontend and API live on different domains —
+// e.g. vercel.app and onrender.com) but browsers only honor "none" when
+// paired with secure: true, so it falls back to "lax" for local dev over
+// plain http where secure cookies don't work at all.
+function refreshCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+}
+
+function setRefreshTokenCookie(res, refreshToken) {
+  res.cookie("refreshToken", refreshToken, {
+    ...refreshCookieOptions(),
+    maxAge: REFRESH_TOKEN_TTL_MS,
+  });
+}
+
 async function register(req, res, next) {
   try {
     const { email, password, name } = req.body;
@@ -54,7 +75,8 @@ async function register(req, res, next) {
 
     const accessToken = signToken(user);
     const refreshToken = await generateRefreshToken(user);
-    res.status(201).json({ accessToken, refreshToken, user });
+    setRefreshTokenCookie(res, refreshToken);
+    res.status(201).json({ accessToken, user });
   } catch (err) {
     next(err);
   }
@@ -74,7 +96,8 @@ async function login(req, res, next) {
     const { password: _password, ...safeUser } = user;
     const accessToken = signToken(safeUser);
     const refreshToken = await generateRefreshToken(safeUser);
-    res.status(200).json({ accessToken, refreshToken, user: safeUser });
+    setRefreshTokenCookie(res, refreshToken);
+    res.status(200).json({ accessToken, user: safeUser });
   } catch (err) {
     next(err);
   }
@@ -82,7 +105,7 @@ async function login(req, res, next) {
 
 async function refresh(req, res, next) {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.cookies;
 
     let payload;
     try {
@@ -113,8 +136,9 @@ async function refresh(req, res, next) {
 
 async function logout(req, res, next) {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.cookies;
     await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+    res.clearCookie("refreshToken", refreshCookieOptions());
     res.status(204).send();
   } catch (err) {
     next(err);

@@ -1,19 +1,9 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import useFetch from "../hooks/useFetch";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../hooks/useAuth";
 import axiosInstance from "../api/axiosInstance";
-
-const API_BASE = "http://localhost:3000";
-
-// Date.now() is impure, so it can't be called directly in the component body
-// (or in a handler the compiler can't prove runs outside render) — pulling it
-// into its own module-level function keeps the id generation out of that
-// analysis. This API doesn't assign ids for you like a real backend would, so
-// the client has to generate one; Date.now() is unique enough for a demo.
-function generateProductId() {
-  return Date.now();
-}
+import { getProductImage } from "../utils/productUtils";
 
 function deriveErrorMessage(err, action) {
   if (err.response?.status === 403) {
@@ -22,33 +12,49 @@ function deriveErrorMessage(err, action) {
   return `Could not ${action} product — make sure the API server is running (cd product-catalog-api && npm start).`;
 }
 
+async function fetchProducts() {
+  const { data } = await axiosInstance.get("/products?pageSize=100");
+  return data.data;
+}
+
+async function fetchCategories() {
+  const { data } = await axiosInstance.get("/categories");
+  return data;
+}
+
 function AdminPage() {
   const { user } = useAuth();
-  const { data, loading, error } = useFetch(`${API_BASE}/products`);
-  const [addedProducts, setAddedProducts] = useState([]);
-  const [deletedIds, setDeletedIds] = useState(() => new Set());
+  const queryClient = useQueryClient();
+  const { data, isLoading: loading, isError: error } = useQuery({
+    queryKey: ["products"],
+    queryFn: fetchProducts,
+  });
+  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const [searchTerm, setSearchTerm] = useState("");
   const [imagePreview, setImagePreview] = useState("");
-  const [submitError, setSubmitError] = useState("");
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm({ defaultValues: { title: "", price: "", image: null } });
+  } = useForm({ defaultValues: { title: "", price: "", categoryId: "", image: null } });
 
-  // products is derived from the fetched list plus this session's local
-  // add/delete overlay, rather than synced into its own state via an
-  // effect — that overlay resets on reload, but by then the server (and
-  // therefore the next fetch) already reflects the real change.
-  const products = useMemo(() => {
-    const fetched = data ?? [];
-    return [
-      ...addedProducts,
-      ...fetched.filter((product) => !deletedIds.has(product.id)),
-    ];
-  }, [data, addedProducts, deletedIds]);
+  const addMutation = useMutation({
+    mutationFn: (formData) => axiosInstance.post("/products", formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      reset();
+      setImagePreview("");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => axiosInstance.delete(`/products/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+  });
+
+  const products = useMemo(() => data ?? [], [data]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) =>
@@ -56,35 +62,17 @@ function AdminPage() {
     );
   }, [products, searchTerm]);
 
-  async function handleDelete(id) {
-    setSubmitError("");
-    try {
-      await axiosInstance.delete(`/products/${id}`);
-      setAddedProducts((prev) => prev.filter((product) => product.id !== id));
-      setDeletedIds((prev) => new Set(prev).add(id));
-    } catch (err) {
-      setSubmitError(deriveErrorMessage(err, "delete"));
-    }
-  }
-
-  async function onSubmit({ title, price }) {
-    setSubmitError("");
-    const newProduct = {
-      id: generateProductId(),
-      title: title.trim(),
-      price: Number(price),
-      image_url: imagePreview,
-      category: "admin-added",
-    };
-
-    try {
-      const { data: created } = await axiosInstance.post("/products", newProduct);
-      setAddedProducts((prev) => [created, ...prev]);
-      reset();
-      setImagePreview("");
-    } catch (err) {
-      setSubmitError(deriveErrorMessage(err, "add"));
-    }
+  // Builds a real multipart/form-data body so the file travels as an
+  // actual upload (see product-catalog-api's upload.single('image')) —
+  // axios sets the multipart Content-Type + boundary itself from a
+  // FormData body, so it's never set manually here.
+  function onSubmit({ title, price, categoryId, image }) {
+    const formData = new FormData();
+    formData.append("title", title.trim());
+    formData.append("price", price);
+    formData.append("categoryId", categoryId);
+    formData.append("image", image[0]);
+    addMutation.mutate(formData);
   }
 
   function handleImageChange(event) {
@@ -118,8 +106,10 @@ function AdminPage() {
 
       <section className="rounded-xl bg-white p-6 shadow-md dark:bg-gray-900 dark:shadow-none dark:ring-1 dark:ring-gray-800">
         <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">Add Product</h2>
-        {submitError && (
-          <p className="mb-4 text-sm text-red-600">{submitError}</p>
+        {addMutation.isError && (
+          <p className="mb-4 text-sm text-red-600">
+            {deriveErrorMessage(addMutation.error, "add")}
+          </p>
         )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -170,6 +160,31 @@ function AdminPage() {
 
           <div>
             <label
+              htmlFor="categoryId"
+              className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Category
+            </label>
+            <select
+              id="categoryId"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              {...register("categoryId", { required: "Category is required" })}
+            >
+              <option value="">Select a category...</option>
+              {categories?.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            {errors.categoryId && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.categoryId.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
               htmlFor="image"
               className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Image
@@ -205,14 +220,21 @@ function AdminPage() {
 
           <button
             type="submit"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
-            Add Product
+            disabled={addMutation.isPending}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+            {addMutation.isPending ? "Adding..." : "Add Product"}
           </button>
         </form>
       </section>
 
       <section className="rounded-xl bg-white p-6 shadow-md dark:bg-gray-900 dark:shadow-none dark:ring-1 dark:ring-gray-800">
         <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">Products</h2>
+
+        {deleteMutation.isError && (
+          <p className="mb-4 text-sm text-red-600">
+            {deriveErrorMessage(deleteMutation.error, "delete")}
+          </p>
+        )}
 
         <input
           type="text"
@@ -227,7 +249,7 @@ function AdminPage() {
         ) : (
           <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {filteredProducts.map((product) => {
-              const image = product.images?.[0] ?? product.thumbnail;
+              const image = getProductImage(product);
               return (
                 <li
                   key={product.id}
@@ -249,9 +271,12 @@ function AdminPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleDelete(product.id)}
-                    className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950">
-                    Delete
+                    onClick={() => deleteMutation.mutate(product.id)}
+                    disabled={deleteMutation.isPending && deleteMutation.variables === product.id}
+                    className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950">
+                    {deleteMutation.isPending && deleteMutation.variables === product.id
+                      ? "Deleting..."
+                      : "Delete"}
                   </button>
                 </li>
               );

@@ -28,14 +28,6 @@ function LogoutIcon(props) {
   );
 }
 
-function ChevronDownIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
-      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function ProfileMenu() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -68,12 +60,11 @@ function ProfileMenu() {
         aria-haspopup="true"
         aria-expanded={open}
         aria-label="Account menu"
-        className="flex items-center gap-1.5 rounded-full text-white"
+        className="flex items-center rounded-full text-white"
       >
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-brand">
           {initial}
         </span>
-        <ChevronDownIcon className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (

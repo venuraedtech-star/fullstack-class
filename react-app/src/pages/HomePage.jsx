@@ -1,95 +1,110 @@
-import { useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import useFetch from "../hooks/useFetch";
 import useCart from "../hooks/useCart";
+import axiosInstance from "../api/axiosInstance";
 import HeroBanner from "../components/HeroBanner";
 import CategoryStrip from "../components/CategoryStrip";
 import ProductGrid from "../components/ProductGrid";
 
-function ProductSection({ title, products, onAdd }) {
-  if (!products.length) return null;
+const PAGE_SIZE = 12;
+const SEARCH_DEBOUNCE_MS = 400;
 
-  return (
-    <section className="mt-4">
-      <div className="mb-3 flex items-center justify-between rounded-sm bg-white px-4 py-3 shadow-sm">
-        <h2 className="text-lg font-medium text-gray-800">{title}</h2>
-        <span className="text-sm font-medium text-brand">View All</span>
-      </div>
-      <ProductGrid products={products} onAdd={onAdd} columns="compact" />
-    </section>
-  );
+async function fetchProducts({ page, search }) {
+  const params = new URLSearchParams({ page, pageSize: PAGE_SIZE });
+  if (search) params.set("search", search);
+  const { data } = await axiosInstance.get(`/products?${params.toString()}`);
+  return data;
 }
 
 function HomePage() {
-  const [searchParams] = useSearchParams();
-  const searchTerm = searchParams.get("q") ?? "";
-  const { data: productsData, loading, error } = useFetch(
-    "https://dummyjson.com/products?limit=194",
-  );
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const { data: categories } = useFetch("https://dummyjson.com/products/categories");
   const { addToCart } = useCart();
 
-  const allProducts = productsData?.products ?? [];
+  // Debounce the search box before it hits the query — the query key
+  // includes `search`, so committing it (rather than searchInput directly)
+  // is what avoids firing a request on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm) return allProducts;
-    return allProducts.filter((product) =>
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [allProducts, searchTerm]);
+  const {
+    data,
+    isLoading: loading,
+    isError: error,
+  } = useQuery({
+    queryKey: ["products", page, search],
+    queryFn: () => fetchProducts({ page, search }),
+  });
 
-  const bestSellers = useMemo(
-    () => [...allProducts].sort((a, b) => b.rating - a.rating).slice(0, 12),
-    [allProducts],
-  );
-
-  const topDeals = useMemo(
-    () => [...allProducts].sort((a, b) => b.discountPercentage - a.discountPercentage).slice(0, 12),
-    [allProducts],
-  );
-
-  const trending = useMemo(
-    () => [...allProducts].sort((a, b) => b.stock - a.stock).slice(0, 12),
-    [allProducts],
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-sm bg-white p-8 text-center text-red-600 shadow-sm">
-        Failed to load products. Please try again later.
-      </div>
-    );
-  }
-
-  if (searchTerm) {
-    return (
-      <div>
-        <div className="mb-4 rounded-sm bg-white px-4 py-3 shadow-sm">
-          <h1 className="text-lg text-gray-800">
-            Showing results for <span className="font-medium">&quot;{searchTerm}&quot;</span>
-            <span className="ml-2 text-sm text-gray-500">({filteredProducts.length} items)</span>
-          </h1>
-        </div>
-        <ProductGrid products={filteredProducts} onAdd={addToCart} />
-      </div>
-    );
-  }
+  const products = data?.data ?? [];
+  const pagination = data?.pagination;
 
   return (
     <>
       <HeroBanner />
       <CategoryStrip categories={categories} />
-      <ProductSection title="Best of Electronics" products={bestSellers} onAdd={addToCart} />
-      <ProductSection title="Top Deals" products={topDeals} onAdd={addToCart} />
-      <ProductSection title="Trending Now" products={trending} onAdd={addToCart} />
+
+      <div className="mt-4 rounded-sm bg-white px-4 py-3 shadow-sm">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          placeholder="Search our catalog..."
+          className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        />
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-24">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 rounded-sm bg-white p-8 text-center text-red-600 shadow-sm">
+          Failed to load products. Please try again later.
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
+          <div className="mt-3">
+            <ProductGrid products={products} onAdd={addToCart} />
+          </div>
+
+          {pagination && pagination.totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </>
   );
 }
