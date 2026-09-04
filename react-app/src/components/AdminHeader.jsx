@@ -1,16 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import useTheme from "../hooks/useTheme";
-import useAuth from "../hooks/useAuth";
 import useCart from "../hooks/useCart";
-
-function BagIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M6 8h12l-1 12.5a2 2 0 0 1-2 1.5H9a2 2 0 0 1-2-1.5L6 8Z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 8V6a3 3 0 0 1 6 0v2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+import ProfileMenu from "./ProfileMenu";
 
 function CartIcon(props) {
   return (
@@ -42,41 +33,29 @@ function MoonIcon(props) {
   );
 }
 
-function LogoutIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function AdminHeader() {
   const { darkMode, toggleTheme } = useTheme();
-  const { logout } = useAuth();
   const { cartCount } = useCart();
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    logout();
-    navigate("/login");
-  }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-4 text-gray-300">
-      <Link to="/" className="flex items-center gap-2 text-lg font-semibold text-white">
-        <BagIcon className="h-6 w-6" />
-        Cartloom
+    <header className="flex h-16 shrink-0 items-center justify-between bg-brand px-4 shadow-md">
+      <Link to="/" className="flex shrink-0 flex-col leading-none">
+        <span className="text-xl font-bold italic text-white">
+          Cart<span className="text-accent">loom</span>
+        </span>
+        <span className="text-[10px] italic text-accent">Admin</span>
       </Link>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <ProfileMenu />
+
         <Link
           to="/cart"
           aria-label="Cart"
-          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-gray-800 hover:text-white">
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10">
           <CartIcon className="h-5 w-5" />
           {cartCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-brand">
               {cartCount}
             </span>
           )}
@@ -86,16 +65,8 @@ function AdminHeader() {
           type="button"
           onClick={toggleTheme}
           aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-gray-800 hover:text-white">
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10">
           {darkMode ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:border-red-500 hover:text-red-400">
-          <LogoutIcon className="h-4 w-4" />
-          Logout
         </button>
       </div>
     </header>

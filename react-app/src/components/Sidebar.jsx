@@ -73,14 +73,14 @@ function Sidebar() {
 
   return (
     <aside
-      className={`flex shrink-0 flex-col bg-gray-900 text-gray-300 transition-all duration-200 ${
+      className={`flex shrink-0 flex-col border-r border-gray-200 bg-white text-gray-600 transition-all duration-200 ${
         collapsed ? "w-16" : "w-56"
       }`}>
       <button
         type="button"
         onClick={() => setCollapsed((prev) => !prev)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="flex items-center justify-center border-b border-gray-800 p-4 text-gray-400 transition-colors hover:text-white">
+        className="flex items-center justify-center border-b border-gray-200 p-4 text-gray-400 transition-colors hover:text-brand">
         <CollapseIcon className={`h-5 w-5 transition-transform ${collapsed ? "rotate-180" : ""}`} />
       </button>
 
@@ -94,8 +94,8 @@ function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "bg-brand text-white"
+                  : "text-gray-600 hover:bg-cream hover:text-brand"
               }`
             }>
             <Icon className="h-5 w-5 shrink-0" />

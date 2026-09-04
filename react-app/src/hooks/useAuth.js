@@ -7,7 +7,7 @@ import {
 
 export default function useAuth() {
   const dispatch = useDispatch();
-  const { user, accessToken, refreshToken, status, error } = useSelector(
+  const { user, accessToken, status, error, loading } = useSelector(
     (state) => state.auth,
   );
 
@@ -32,9 +32,9 @@ export default function useAuth() {
   return {
     user,
     accessToken,
-    refreshToken,
     status,
     error,
+    loading,
     isLoggedIn: !!user,
     login,
     register,

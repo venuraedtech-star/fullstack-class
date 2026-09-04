@@ -4,9 +4,9 @@ const productModel = require("../models/productModel");
 
 async function getAllProducts(req, res, next) {
   try {
-    const { category, maxPrice, sort, page, pageSize } = req.query;
-    const products = await productModel.getAll({ category, maxPrice, sort, page, pageSize });
-    res.json(products);
+    const { category, maxPrice, sort, page, pageSize, search } = req.query;
+    const result = await productModel.getAll({ category, maxPrice, sort, page, pageSize, search });
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -30,7 +30,19 @@ async function getProductById(req, res, next) {
 
 async function createProduct(req, res, next) {
   try {
-    const created = await productModel.create(req.body);
+    // req.file exists when the request was multipart/form-data with an
+    // uploaded image (see middleware/upload.js). Otherwise fall back to a
+    // plain imageUrl in the body — either camelCase (new callers) or the
+    // original image_url (existing Admin frontend, Postman, seed scripts).
+    const image_url = req.file
+      ? `/uploads/${req.file.filename}`
+      : req.body.imageUrl ?? req.body.image_url;
+
+    const created = await productModel.create({
+      ...req.body,
+      price: Number(req.body.price),
+      image_url,
+    });
     res.status(201).json(created);
   } catch (err) {
     next(err);

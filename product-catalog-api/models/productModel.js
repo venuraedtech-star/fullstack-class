@@ -21,7 +21,7 @@ async function resolveCategoryId(categoryName) {
   return category.id;
 }
 
-async function getAll({ category, maxPrice, sort, page, pageSize } = {}) {
+async function getAll({ category, maxPrice, sort, page, pageSize, search } = {}) {
   const where = {};
 
   if (category) {
@@ -32,19 +32,34 @@ async function getAll({ category, maxPrice, sort, page, pageSize } = {}) {
     where.price = { lte: Number(maxPrice) };
   }
 
+  if (search) {
+    where.title = { contains: search, mode: "insensitive" };
+  }
+
   const direction = sort === "desc" ? "desc" : "asc";
   const pageNum = Math.max(1, Number(page) || 1);
   const sizeNum = Math.max(1, Number(pageSize) || 20);
 
-  const products = await prisma.product.findMany({
-    where,
-    orderBy: { price: direction },
-    skip: (pageNum - 1) * sizeNum,
-    take: sizeNum,
-    include: { category: true },
-  });
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: { price: direction },
+      skip: (pageNum - 1) * sizeNum,
+      take: sizeNum,
+      include: { category: true },
+    }),
+    prisma.product.count({ where }),
+  ]);
 
-  return products.map(serializeProduct);
+  return {
+    data: products.map(serializeProduct),
+    pagination: {
+      page: pageNum,
+      pageSize: sizeNum,
+      total,
+      totalPages: Math.ceil(total / sizeNum),
+    },
+  };
 }
 
 async function findById(id) {
@@ -56,24 +71,33 @@ async function findById(id) {
   return product ? serializeProduct(product) : undefined;
 }
 
-async function create({ title, price, category, description, image_url }) {
-  const categoryId = await resolveCategoryId(category);
+// The Admin form now sends a real categoryId (picked from an existing
+// category), used directly when present. category (a plain name string)
+// is kept as a fallback for older callers — Postman, seed scripts — that
+// still send a name to be resolved/created rather than an id.
+async function resolveCategory({ categoryId, category }) {
+  if (categoryId) return Number(categoryId);
+  return resolveCategoryId(category);
+}
+
+async function create({ title, price, category, categoryId, description, image_url }) {
+  const resolvedCategoryId = await resolveCategory({ categoryId, category });
 
   const product = await prisma.product.create({
-    data: { title, price, description, imageUrl: image_url, categoryId },
+    data: { title, price, description, imageUrl: image_url, categoryId: resolvedCategoryId },
     include: { category: true },
   });
 
   return serializeProduct(product);
 }
 
-async function update(id, { title, price, category, description, image_url }) {
-  const categoryId = await resolveCategoryId(category);
+async function update(id, { title, price, category, categoryId, description, image_url }) {
+  const resolvedCategoryId = await resolveCategory({ categoryId, category });
 
   try {
     const product = await prisma.product.update({
       where: { id: Number(id) },
-      data: { title, price, description, imageUrl: image_url, categoryId },
+      data: { title, price, description, imageUrl: image_url, categoryId: resolvedCategoryId },
       include: { category: true },
     });
     return serializeProduct(product);

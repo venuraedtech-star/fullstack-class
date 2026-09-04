@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, NavLink, Link, useNavigate, useSearchParams } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import useCart from "../hooks/useCart";
 import Footer from "./Footer";
 import ProfileMenu from "./ProfileMenu";
+
+const SEARCH_DEBOUNCE_MS = 400;
 
 function Layout() {
   const { isLoggedIn } = useAuth();
@@ -12,14 +14,26 @@ function Layout() {
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") ?? "");
 
+  // Live search-as-you-type: wait for a pause in typing before navigating,
+  // so every keystroke doesn't trigger its own fetch/navigation. Comparing
+  // against the URL's current `q` (rather than a "have I run yet" ref) means
+  // this is a no-op whenever there's nothing to change — including on mount,
+  // and correctly even under StrictMode's dev-mode double effect invocation.
+  useEffect(() => {
+    const query = searchTerm.trim();
+    const currentQuery = searchParams.get("q") ?? "";
+    if (query === currentQuery) return;
+
+    const timer = setTimeout(() => {
+      navigate(query ? `/?q=${encodeURIComponent(query)}` : "/", { replace: true });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchTerm, navigate, searchParams]);
+
   function handleSearch(event) {
     event.preventDefault();
     const query = searchTerm.trim();
-    if (query) {
-      navigate(`/?q=${encodeURIComponent(query)}`);
-    } else {
-      navigate("/");
-    }
+    navigate(query ? `/?q=${encodeURIComponent(query)}` : "/", { replace: true });
   }
 
   return (
@@ -33,26 +47,29 @@ function Layout() {
             <span className="text-[10px] text-accent italic">Explore Plus</span>
           </Link>
 
-          <form onSubmit={handleSearch} className="flex flex-1 items-center">
+          <form
+            onSubmit={handleSearch}
+            className="flex flex-1 max-w-md items-center overflow-hidden rounded-sm border border-transparent bg-white transition-colors hover:border-accent focus-within:border-accent"
+          >
             <input
               type="text"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search for products, brands and more"
-              className="w-full rounded-l-sm px-4 py-2.5 text-sm text-gray-800 outline-none"
+              className="w-full px-3 py-1.5 text-sm text-gray-800 outline-none"
             />
             <button
               type="submit"
-              className="rounded-r-sm bg-white px-5 py-2.5 text-brand transition hover:bg-gray-50"
+              className="px-4 py-1.5 text-brand transition hover:bg-gray-50"
               aria-label="Search"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
           </form>
 
-          <nav className="hidden items-center gap-6 md:flex">
+          <nav className="ml-auto hidden items-center gap-6 md:flex">
             {isLoggedIn ? (
               <ProfileMenu />
             ) : (

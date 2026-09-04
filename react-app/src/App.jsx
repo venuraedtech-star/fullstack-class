@@ -1,4 +1,7 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { refreshOnLoad } from "./store/authSlice";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
@@ -27,7 +30,32 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import ProfilePage from "./pages/ProfilePage";
 
+// Access tokens expire after 15 minutes (see authController.js signToken).
+// Re-running the same silent-refresh thunk on this interval keeps an active
+// session's token from ever going stale, and — just as importantly — is
+// what notices a refresh token that's expired or been revoked while the
+// user was only ever browsing public pages (no request ever 401s in that
+// case, since nothing protected gets called, so the reactive axios
+// interceptor in api/axiosInstance.js never fires and the header would
+// otherwise keep showing a "logged in" user with a dead session).
+const SESSION_CHECK_INTERVAL_MS = 10 * 60 * 1000;
+
 function App() {
+  const dispatch = useDispatch();
+  const isLoggedIn = useSelector((state) => !!state.auth.user);
+
+  useEffect(() => {
+    dispatch(refreshOnLoad());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return undefined;
+    const interval = setInterval(() => {
+      dispatch(refreshOnLoad());
+    }, SESSION_CHECK_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [dispatch, isLoggedIn]);
+
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -67,7 +95,7 @@ function App() {
       <Route
         path="admin"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAdmin>
             <AdminLayout />
           </ProtectedRoute>
         }

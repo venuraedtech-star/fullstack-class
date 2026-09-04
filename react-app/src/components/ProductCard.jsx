@@ -11,11 +11,15 @@ export function ProductCard({ product, onAdd }) {
     <div className="group flex h-full flex-col bg-white p-4 shadow-sm transition hover:shadow-md">
       <Link to={`/product/${id}`} className="flex flex-1 flex-col">
         <div className="relative mb-3 flex h-44 items-center justify-center overflow-hidden">
-          <img
-            src={image}
-            alt={title}
-            className="max-h-full max-w-full object-contain transition group-hover:scale-105"
-          />
+          {image ? (
+            <img
+              src={image}
+              alt={title}
+              className="max-h-full max-w-full object-contain transition group-hover:scale-105"
+            />
+          ) : (
+            <div className="h-full w-full rounded bg-gray-100" />
+          )}
           {discountPercentage > 0 && (
             <span className="absolute left-0 top-0 rounded-br bg-success px-2 py-0.5 text-xs font-medium text-white">
               {Math.round(discountPercentage)}% off

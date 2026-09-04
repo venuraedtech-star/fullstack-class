@@ -1,37 +1,42 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+  // Sends/receives the httpOnly refresh-token cookie the backend now sets
+  // on login/register instead of returning it in the JSON body.
+  withCredentials: true,
 });
 
-// Attaches the access token to every request made through this instance.
-// Reads straight from localStorage (rather than importing the Redux store)
-// to avoid a circular import between the store and this module.
+// The access token now lives in memory only (see store/authSlice.js) —
+// never localStorage. This module-level variable is how axiosInstance
+// reads the current value without importing the Redux store directly,
+// which would create a circular import (store -> authSlice -> this file
+// -> store). authSlice calls setAccessToken() whenever the token changes.
+let accessToken = null;
+
+export function setAccessToken(token) {
+  accessToken = token;
+}
+
 axiosInstance.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem("accessToken");
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 });
 
-function clearAuthStorage() {
-  localStorage.removeItem("user");
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-}
-
 function redirectToLogin() {
-  clearAuthStorage();
+  setAccessToken(null);
   if (!window.location.pathname.startsWith("/login")) {
     window.location.href = "/login";
   }
 }
 
 // Handles an expired access token transparently: on a 401 from a protected
-// route, try the refresh token once and retry the original request. If the
-// refresh token is also invalid/expired (or there isn't one), the session
-// is really over — clear it and send the user back to the login screen.
+// route, try the refresh token once (sent automatically as a cookie via
+// withCredentials — no body needed) and retry the original request. If the
+// refresh token is also invalid/expired, the session is really over — clear
+// it and send the user back to the login screen.
 let refreshPromise = null;
 
 axiosInstance.interceptors.response.use(
@@ -45,24 +50,16 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) {
-      redirectToLogin();
-      return Promise.reject(error);
-    }
-
     originalRequest._retry = true;
 
     try {
       if (!refreshPromise) {
-        refreshPromise = axiosInstance
-          .post("/auth/refresh", { refreshToken })
-          .finally(() => {
-            refreshPromise = null;
-          });
+        refreshPromise = axiosInstance.post("/auth/refresh").finally(() => {
+          refreshPromise = null;
+        });
       }
       const { data } = await refreshPromise;
-      localStorage.setItem("accessToken", data.accessToken);
+      setAccessToken(data.accessToken);
       originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
       return axiosInstance(originalRequest);
     } catch (refreshError) {

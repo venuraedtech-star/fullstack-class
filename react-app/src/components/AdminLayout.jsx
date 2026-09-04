@@ -8,7 +8,7 @@ function AdminLayout() {
       <AdminHeader />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 overflow-x-auto bg-gray-50 p-6 dark:bg-gray-950">
+        <main className="flex-1 overflow-x-auto bg-cream p-6 dark:bg-gray-950">
           <Outlet />
         </main>
       </div>

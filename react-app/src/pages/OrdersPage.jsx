@@ -22,8 +22,13 @@ function OrdersPage() {
       .then(({ data }) => {
         if (!cancelled) setOrders(data);
       })
-      .catch(() => {
-        if (!cancelled) setError("Could not load orders — make sure the API server is running.");
+      .catch((err) => {
+        if (cancelled) return;
+        const message =
+          err.response?.status === 403
+            ? "You don't have permission to view orders — an admin account is required."
+            : "Could not load orders — make sure the API server is running.";
+        setError(message);
       });
     return () => {
       cancelled = true;
