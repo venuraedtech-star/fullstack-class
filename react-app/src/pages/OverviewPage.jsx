@@ -5,10 +5,11 @@ const API_BASE = "http://localhost:3000";
 
 function OverviewPage() {
   const { user } = useAuth();
-  const { data: products, loading, error } = useFetch(`${API_BASE}/products?pageSize=1000`);
+  const { data: response, loading, error } = useFetch(`${API_BASE}/products?pageSize=1000`);
+  const products = response?.data ?? [];
 
   const categoryCount = new Set(
-    (products ?? []).map((product) => product.category?.name).filter(Boolean),
+    products.map((product) => product.category?.name).filter(Boolean),
   ).size;
 
   return (

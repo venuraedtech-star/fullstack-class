@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useFetch from "../hooks/useFetch";
 import useCart from "../hooks/useCart";
@@ -8,7 +9,6 @@ import CategoryStrip from "../components/CategoryStrip";
 import ProductGrid from "../components/ProductGrid";
 
 const PAGE_SIZE = 12;
-const SEARCH_DEBOUNCE_MS = 400;
 
 async function fetchProducts({ page, search }) {
   const params = new URLSearchParams({ page, pageSize: PAGE_SIZE });
@@ -19,21 +19,24 @@ async function fetchProducts({ page, search }) {
 
 function HomePage() {
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  // The header search box (Layout.jsx) is the single search entry point —
+  // it already debounces typing and writes the result to the `q` URL param.
+  // Reading it here (instead of keeping a second, disconnected local input)
+  // is what makes that header search actually filter the product grid.
+  const [searchParams] = useSearchParams();
+  const search = searchParams.get("q") ?? "";
   const { data: categories } = useFetch("https://dummyjson.com/products/categories");
   const { addToCart } = useCart();
 
-  // Debounce the search box before it hits the query — the query key
-  // includes `search`, so committing it (rather than searchInput directly)
-  // is what avoids firing a request on every keystroke.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1);
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+  // Reset to page 1 whenever the search term changes, without an effect —
+  // adjusting state during render (rather than in a useEffect) avoids the
+  // extra commit-then-rerender pass React flags for a synchronous setState
+  // inside an effect.
+  const [prevSearch, setPrevSearch] = useState(search);
+  if (search !== prevSearch) {
+    setPrevSearch(search);
+    setPage(1);
+  }
 
   const {
     data,
@@ -52,15 +55,11 @@ function HomePage() {
       <HeroBanner />
       <CategoryStrip categories={categories} />
 
-      <div className="mt-4 rounded-sm bg-white px-4 py-3 shadow-sm">
-        <input
-          type="text"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search our catalog..."
-          className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-        />
-      </div>
+      {search && (
+        <div className="mt-4 rounded-sm bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
+          Showing results for <span className="font-medium text-gray-900">&ldquo;{search}&rdquo;</span>
+        </div>
+      )}
 
       {loading && (
         <div className="flex items-center justify-center py-24">
